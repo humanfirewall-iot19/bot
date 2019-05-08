@@ -28,16 +28,21 @@ class Bot:
     def send_message(self, chat_id, message):
         self.updater.bot.send_message(text=message, chat_id=chat_id)
 
-    def send_notification(self, chat_id, target_id, url_photo):
-        url = get_url()
-        button_list = [
-            InlineKeyboardButton("Lascia un feedback", callback_data="Feedback,{}".format(target_id)),
-        ]
-        reply_markup = InlineKeyboardMarkup(build_menu(button_list, n_cols=1))
-        self.updater.bot.send_photo(chat_id=chat_id, photo=url)
-        self.updater.bot.send_message(chat_id=chat_id,
-                                      text="Pensiamo che utente {} abbia suonato alla porta!".format(target_id),
-                                      reply_markup=reply_markup)
+    def send_notification(self, board_id, target_id, url_photo):
+        db = DBHelper()
+        db.connect()
+        chat_ids = db.get_chatID_by_device(str(board_id))
+        db.close()
+        for chat_id in chat_ids:
+            url = get_url()
+            button_list = [
+                InlineKeyboardButton("Lascia un feedback", callback_data="Feedback,{}".format(target_id)),
+            ]
+            reply_markup = InlineKeyboardMarkup(build_menu(button_list, n_cols=1))
+            self.updater.bot.send_photo(chat_id=chat_id, photo=url)
+            self.updater.bot.send_message(chat_id=chat_id,
+                                        text="Pensiamo che utente {} abbia suonato alla porta!".format(target_id),
+                                        reply_markup=reply_markup)
 
     def start(self):
         self.updater.start_polling()
@@ -80,13 +85,13 @@ class Bot:
         bot.send_message(chat_id=chat_id, text="Ho correttamente configura l'id {}".format(msg))
         db = DBHelper()
         db.connect()
-        db.add_user(chat_id, msg)
+        db.add_user(str(msg), str(chat_id))
         db.close()
         return ConversationHandler.END
 
 
 def _test_notification(bot, update):
-    pussa_via.send_notification(update.message.chat_id, 1, None)
+    pussa_via.send_notification(1, 1, None)
 
 
 def _help(bot, update):
