@@ -38,7 +38,7 @@ class DBHelper:
         self.conn.commit()
 
     def add_feedback(self, id, target, unwanted):
-        self.delete_user(id, target)
+        self.delete_feedback(id, target)
         stmt = "INSERT INTO userFeedback (id, target, unwanted) VALUES (?,?,?)"
         args = (id, target, unwanted)
         self.conn.execute(stmt, args)
