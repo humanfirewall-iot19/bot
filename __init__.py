@@ -50,7 +50,7 @@ class Bot:
             else:
                 text+="\nNon siamo certi sulla valutazione della persona."
             self.updater.bot.send_message(chat_id=chat_id,
-                                        text=,
+                                        text=text,
                                         reply_markup=reply_markup)
         db.close()
 
