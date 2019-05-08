@@ -34,12 +34,13 @@ class Bot:
         chat_ids = db.get_chatID_by_device(str(board_id))
         db.close()
         for chat_id in chat_ids:
-            url = get_url()
+            if url_photo is None:
+                url_photo = get_url()
             button_list = [
                 InlineKeyboardButton("Lascia un feedback", callback_data="Feedback,{}".format(target_id)),
             ]
             reply_markup = InlineKeyboardMarkup(build_menu(button_list, n_cols=1))
-            self.updater.bot.send_photo(chat_id=chat_id, photo=url)
+            self.updater.bot.send_photo(chat_id=chat_id, photo=url_photo)
             self.updater.bot.send_message(chat_id=chat_id,
                                         text="Pensiamo che utente {} abbia suonato alla porta!".format(target_id),
                                         reply_markup=reply_markup)
