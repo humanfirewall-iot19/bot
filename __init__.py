@@ -3,8 +3,8 @@ import logging
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, ConversationHandler, MessageHandler, Filters
 
-from bot_helper import get_url, build_menu
-from db_helper import DBHelper
+from .bot_helper import get_url, build_menu
+from .db_helper import DBHelper
 
 CONFIGURE_RESPONSE = 1
 
@@ -15,7 +15,7 @@ class Bot:
     def __init__(self):
         self.updater = Updater('893974066:AAHS53j4hGLEn-5RB6GLhinDY2IUpPaar3w')
         dp = self.updater.dispatcher
-        dp.add_handler(CommandHandler('test', _test_notification))
+        dp.add_handler(CommandHandler('test', self._test_notification))
         dp.add_handler(CommandHandler('help', help))
         dp.add_handler(ConversationHandler(
             entry_points=[CommandHandler('configure', _configure_start)],
@@ -89,9 +89,8 @@ class Bot:
         db.close()
         return ConversationHandler.END
 
-
-def _test_notification(bot, update):
-    pussa_via.send_notification(1, 1, None)
+    def _test_notification(self, bot, update):
+        self.send_notification(1, 1, None)
 
 
 def _help(bot, update):
