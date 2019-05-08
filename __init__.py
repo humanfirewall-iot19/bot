@@ -43,7 +43,9 @@ class Bot:
             self.updater.bot.send_photo(chat_id=chat_id, photo=url_photo)
             text = "Pensiamo che utente {} abbia suonato alla porta!".format(target_id)
             
-            if feedback[0] > feedback[1]:
+            if feedback is None:
+                text+="\nPersona ignota."
+            elif feedback[0] > feedback[1]:
                 text += "\nE' uno scammer conosciuto."
             elif feedback[1] > feedback[0]:
                 text += "\nNon è classificato come scammer."
