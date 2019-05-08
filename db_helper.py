@@ -25,7 +25,7 @@ class DBHelper:
         self.conn.commit()
 
     def add_user(self, device, id):
-        delete_user(device,id)
+        self.delete_user(device, id)
         stmt = "INSERT INTO userRel (device, id) VALUES (?,?)"
         args = (device, id)
         self.conn.execute(stmt, args)
