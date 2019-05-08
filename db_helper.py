@@ -69,8 +69,8 @@ class DBHelper:
             return None
 
         elif cursor1.fetchone() is None:
-            return 0, cursor2[0]
+            return 0, cursor2.fetchone()[0]
         elif cursor2.fetchone() is None:
-            return cursor1[], 0
+            return cursor1.fetchone()[0], 0
         else:
-            return cursor1[0],cursor2[0]
+            return cursor1.fetchone()[0],cursor2.fetchone()[0]
