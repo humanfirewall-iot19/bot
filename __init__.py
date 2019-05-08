@@ -32,7 +32,7 @@ class Bot:
         db = DBHelper()
         db.connect()
         chat_ids = db.get_chatID_by_device(str(board_id))
-        db.close()
+        feedback = db.get_feedback_by_target(target_id)
         for chat_id in chat_ids:
             if url_photo is None:
                 url_photo = get_url()
@@ -41,9 +41,18 @@ class Bot:
             ]
             reply_markup = InlineKeyboardMarkup(build_menu(button_list, n_cols=1))
             self.updater.bot.send_photo(chat_id=chat_id, photo=url_photo)
+            text = "Pensiamo che utente {} abbia suonato alla porta!".format(target_id)
+            
+            if feedback[0] > feedback[1]:
+                text += "\nE' uno scammer conosciuto."
+            elif feedback[1] > feedback[0]:
+                text += "\nNon è classificato come scammer."
+            else:
+                text+="\nNon siamo certi sulla valutazione della persona."
             self.updater.bot.send_message(chat_id=chat_id,
-                                        text="Pensiamo che utente {} abbia suonato alla porta!".format(target_id),
+                                        text=,
                                         reply_markup=reply_markup)
+        db.close()
 
     def start(self):
         self.updater.start_polling()
