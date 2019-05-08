@@ -68,12 +68,3 @@ class DBHelper:
         if cursor1.fetchone() is None or cursor2.fetchone() is None:
             return None
         return self.conn.execute(stmt1, args).fetchone()[0], self.conn.execute(stmt2, args).fetchone()[0]
-
-
-db = DBHelper()
-db.connect()
-db.add_feedback("Leo", "1", 1)
-db.add_feedback("Andrea", "1", 1)
-db.add_feedback("Mattia", "1", 0)
-print(db.get_feedback_by_target("2"))
-print(db.get_feedback_by_target("1"))
