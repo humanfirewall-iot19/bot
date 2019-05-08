@@ -65,12 +65,13 @@ class DBHelper:
         args = target
         cursor1 = self.conn.execute(stmt1, args)
         cursor2 = self.conn.execute(stmt2, args)
-        if cursor1.fetchone() is None and cursor2.fetchone() is None:
+        ret1 = cursor1.fetchone()
+        ret2 = cursor2.fetchone()
+        if ret1 is None and ret2 is None:
             return None
-
-        elif cursor1.fetchone() is None:
-            return 0, cursor2.fetchone()[0]
-        elif cursor2.fetchone() is None:
-            return cursor1.fetchone()[0], 0
+        elif ret1 is None:
+            return 0, ret2[0]
+        elif ret2 is None:
+            return ret1[0], 0
         else:
-            return cursor1.fetchone()[0],cursor2.fetchone()[0]
+            return ret1[0],ret2[0]
