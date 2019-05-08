@@ -40,7 +40,7 @@ class Bot:
                 InlineKeyboardButton("Lascia un feedback", callback_data="Feedback,{}".format(target_id)),
             ]
             reply_markup = InlineKeyboardMarkup(build_menu(button_list, n_cols=1))
-            self.updater.bot.send_photo(chat_id=chat_id, photo=url_photo)
+            self.updater.bot.send_photo(chat_id=chat_id, photo=url_photo, timeout=30)
             text = "Pensiamo che utente {} abbia suonato alla porta!".format(target_id)
             
             if feedback is None:
