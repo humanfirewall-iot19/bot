@@ -12,6 +12,7 @@ from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, Conversa
 from .bot_helper import get_url, build_menu
 from .db_helper import DBHelper
 
+REQUEST_NAME_CONFIGURE = 2
 CONFIGURE_RESPONSE = 1
 
 
@@ -26,7 +27,9 @@ class Bot:
         dp.add_handler(ConversationHandler(
             entry_points=[CommandHandler('configure', _configure_start)],
             states={
-                CONFIGURE_RESPONSE: [MessageHandler((Filters.text | Filters.photo), self.received_deviceid)]
+                REQUEST_NAME_CONFIGURE: [MessageHandler(Filters.text, request_name, pass_user_data=True)],
+                CONFIGURE_RESPONSE: [
+                    MessageHandler((Filters.text | Filters.photo), self.received_deviceid, pass_user_data=True)]
             },
             fallbacks=[CommandHandler('cancel', _cancel)]))
         dp.add_handler(CallbackQueryHandler(self._handle_callback_feedback))
@@ -97,7 +100,7 @@ class Bot:
                 text="Grazie per il feedback!",
             )
 
-    def received_deviceid(self, bot, update):
+    def received_deviceid(self, bot, update, user_data):
         chat_id = str(update.message.chat_id)
         if update.message.text is None and (update.message.photo is None or len(update.message.photo) == 0):
             bot.send_message(chat_id=chat_id, text="Devi scrivere l'id o mandare una foto con un QRCODE!")
@@ -120,7 +123,7 @@ class Bot:
         return ConversationHandler.END
 
     def _test_notification(self, bot, update):
-        self.send_notification(1, 1, None)
+        self.send_notification("1", "1", None)
 
 
 def _help(bot, update):
@@ -133,8 +136,16 @@ def _help(bot, update):
 def _configure_start(bot, update):
     chat_id = update.message.chat_id
     bot.send_message(chat_id=chat_id,
-                     text="Inserisci il codice del citofono per iniziare a ricevere le notifiche di chi ti suona alla "
+                     text="Inserisci il nome del citofono per iniziare a ricevere le notifiche di chi ti suona alla "
                           "porta")
+    return REQUEST_NAME_CONFIGURE
+
+
+def request_name(bot, update, user_data):
+    text = update.message.text
+    user_data['choice'] = text
+    update.message.reply_text(
+        'Ok what is the id for {}?'.format(text.lower()))
     return CONFIGURE_RESPONSE
 
 
@@ -142,3 +153,10 @@ def _cancel(bot, update):
     bot.send_message(chat_id=update.message.chat_id, text="Operazione annullata.\nRicordati che devi avere almeno un "
                                                           "dispositivo configurato per utilizzare questo bot al meglio!")
     return ConversationHandler.END
+
+
+if __name__ == '__main__':
+    logging.basicConfig(level=logging.DEBUG,
+                        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    pussa_via = Bot("892929562:AAEQqwBw_xzNJPLaK2VEHiGErtnbL49yro4")
+    pussa_via.start()
