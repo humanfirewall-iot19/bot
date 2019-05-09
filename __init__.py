@@ -1,4 +1,5 @@
 import logging
+import os
 from io import BytesIO
 
 import requests
@@ -17,8 +18,8 @@ CONFIGURE_RESPONSE = 1
 class Bot:
     updater = None
 
-    def __init__(self):
-        self.updater = Updater('893974066:AAHS53j4hGLEn-5RB6GLhinDY2IUpPaar3w')
+    def __init__(self, token):
+        self.updater = Updater(token)
         dp = self.updater.dispatcher
         dp.add_handler(CommandHandler('test', self._test_notification))
         dp.add_handler(CommandHandler('help', help))
@@ -146,5 +147,5 @@ def _cancel(bot, update):
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG,
                         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    pussa_via = Bot()
+    pussa_via = Bot(os.environ["HF_TELEGRAM_TOKEN"])
     pussa_via.start()
