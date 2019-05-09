@@ -142,10 +142,3 @@ def _cancel(bot, update):
     bot.send_message(chat_id=update.message.chat_id, text="Operazione annullata.\nRicordati che devi avere almeno un "
                                                           "dispositivo configurato per utilizzare questo bot al meglio!")
     return ConversationHandler.END
-
-
-if __name__ == '__main__':
-    logging.basicConfig(level=logging.DEBUG,
-                        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    pussa_via = Bot(os.environ["HF_TELEGRAM_TOKEN"])
-    pussa_via.start()
