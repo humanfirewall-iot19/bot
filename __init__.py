@@ -98,10 +98,10 @@ class Bot:
 
     def received_deviceid(self, bot, update):
         chat_id = str(update.message.chat_id)
-        if update.message.text is None and update.message.photo is None:
+        if update.message.text is None and (update.message.photo is None or len(update.message.photo) == 0):
             bot.send_message(chat_id=chat_id, text="Devi scrivere l'id o mandare una foto con un QRCODE!")
             return
-        if update.message.photo is not None:
+        if update.message.photo is not None and len(update.message.photo) > 0:
             photo_id = update.message.photo[-1].file_id
             img_file = bot.get_file(photo_id)
             response = requests.get(img_file.file_path)

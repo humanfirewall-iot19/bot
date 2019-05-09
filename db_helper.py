@@ -56,7 +56,7 @@ class DBHelper:
 
     def get_chatID_by_device(self, device):
         stmt = "SELECT DISTINCT id FROM userRel where device = (?)"
-        args = device
+        args = (device,)
         return [x[0] for x in self.conn.execute(stmt, args)]
 
     def get_feedback_by_target(self, target):
