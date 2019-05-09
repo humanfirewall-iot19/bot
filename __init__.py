@@ -8,7 +8,7 @@ from PIL import Image
 from pyzbar.pyzbar import decode
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, ConversationHandler, MessageHandler, Filters
-
+import telegram
 from .bot_helper import get_url, build_menu
 from .db_helper import DBHelper
 
