@@ -1,5 +1,10 @@
 import logging
+from io import BytesIO
 
+import requests
+from PIL import Image
+
+from pyzbar.pyzbar import decode
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, ConversationHandler, MessageHandler, Filters
 
@@ -20,7 +25,7 @@ class Bot:
         dp.add_handler(ConversationHandler(
             entry_points=[CommandHandler('configure', _configure_start)],
             states={
-                CONFIGURE_RESPONSE: [MessageHandler(Filters.text, self.received_deviceid)]
+                CONFIGURE_RESPONSE: [MessageHandler((Filters.text | Filters.photo), self.received_deviceid)]
             },
             fallbacks=[CommandHandler('cancel', _cancel)]))
         dp.add_handler(CallbackQueryHandler(self._handle_callback_feedback))
@@ -42,23 +47,23 @@ class Bot:
             reply_markup = InlineKeyboardMarkup(build_menu(button_list, n_cols=1))
             self.updater.bot.send_photo(chat_id=chat_id, photo=url_photo, timeout=30)
             text = "Pensiamo che utente {} abbia suonato alla porta!".format(target_id)
-            
+
             if feedback is None:
-                text+="\nPersona ignota."
+                text += "\nPersona ignota."
             elif feedback[0] > feedback[1]:
                 text += "\nE' uno scammer conosciuto."
             elif feedback[1] > feedback[0]:
                 text += "\nNon è classificato come scammer."
             else:
-                text+="\nNon siamo certi sulla valutazione della persona."
+                text += "\nNon siamo certi sulla valutazione della persona."
             self.updater.bot.send_message(chat_id=chat_id,
-                                        text=text,
-                                        reply_markup=reply_markup)
+                                          text=text,
+                                          reply_markup=reply_markup)
         db.close()
 
     def start(self):
         self.updater.start_polling()
-        #self.updater.idle()
+        # self.updater.idle()
 
     def stop(self):
         self.updater.stop()
@@ -93,11 +98,23 @@ class Bot:
 
     def received_deviceid(self, bot, update):
         chat_id = str(update.message.chat_id)
-        msg = str(update.message.text).strip()
-        bot.send_message(chat_id=chat_id, text="Ho correttamente configura l'id {}".format(msg))
+        if update.message.text is None and update.message.photo is None:
+            bot.send_message(chat_id=chat_id, text="Devi scrivere l'id o mandare una foto con un QRCODE!")
+            return
+        if update.message.photo is not None:
+            photo_id = update.message.photo[-1].file_id
+            img_file = bot.get_file(photo_id)
+            response = requests.get(img_file.file_path)
+            raw_img = BytesIO(response.content)
+            img = Image.open(raw_img)
+            intercom_id = list(filter(lambda x: x.type == "QRCODE", decode(img)))[0].data.strip()
+        else:
+            intercom_id = str(update.message.text).strip()
+
+        bot.send_message(chat_id=chat_id, text="Ho correttamente configura l'id {}".format(intercom_id))
         db = DBHelper()
         db.connect()
-        db.add_user(str(msg), str(chat_id))
+        db.add_user(str(intercom_id), str(chat_id))
         db.close()
         return ConversationHandler.END
 
