@@ -41,17 +41,13 @@ class Bot:
     def send_message(self, chat_id, message):
         self.updater.bot.send_message(text=message, chat_id=chat_id)
 
-    def send_notification(self, board_id, target_id, photo):
+    def send_notification(self, board_id, target_id, photo, has_face=True):
         db = DBHelper()
         db.connect()
         chat_ids = db.get_chatID_by_device(str(board_id))
         feedback = db.get_feedback_by_target(target_id)
         for chat_id in chat_ids:
             device_name = db.get_device_name_by_chatID_and_device(chat_id, board_id)
-            if photo is None:
-                self.updater.bot.send_message(chat_id=chat_id,
-                                              text="Qualcuno ha suonato alla porta ma purtroppo non so dirti chi e' stato")
-                continue
             button_list = [
                 InlineKeyboardButton("Lascia un feedback", callback_data="feedback,{}".format(target_id)),
             ]
@@ -60,15 +56,18 @@ class Bot:
                 self.updater.bot.send_photo(chat_id=chat_id, photo=photo, timeout=120)
             except telegram.error.TimedOut:
                 pass
-            text = "[{}] Pensiamo che utente {} abbia suonato alla porta!".format(device_name, target_id)
-            if feedback is None:
-                text += "\nPersona ignota."
-            elif feedback[0] > feedback[1]:
-                text += "\nE' uno scammer conosciuto."
-            elif feedback[1] > feedback[0]:
-                text += "\nNon è classificato come scammer."
+            if has_face:
+                text = "[{}] Pensiamo che utente {} abbia suonato alla porta!".format(device_name, target_id)
+                if feedback is None:
+                    text += "\nPersona ignota."
+                elif feedback[0] > feedback[1]:
+                    text += "\nE' uno scammer conosciuto."
+                elif feedback[1] > feedback[0]:
+                    text += "\nNon è classificato come scammer."
+                else:
+                    text += "\nNon siamo certi sulla valutazione della persona."
             else:
-                text += "\nNon siamo certi sulla valutazione della persona."
+                text = "Qualcuno ha suonato alla porta ma purtroppo non so dirti chi e' stato"
             self.updater.bot.send_message(chat_id=chat_id,
                                           text=text,
                                           reply_markup=reply_markup)

@@ -81,7 +81,7 @@ class DBHelper:
     def get_feedback_by_target(self, target):
         stmt1 = "SELECT count(*) FROM userFeedback where target = (?) AND unwanted == 1 group by target"
         stmt2 = "SELECT count(*) FROM userFeedback where target = (?) AND unwanted == 0 group by target"
-        args = target
+        args = (target,)
         cursor1 = self.conn.execute(stmt1, args)
         cursor2 = self.conn.execute(stmt2, args)
         ret1 = cursor1.fetchone()
