@@ -1,4 +1,3 @@
-import logging
 from io import BytesIO
 
 import requests
@@ -60,7 +59,6 @@ class Bot:
             except telegram.error.TimedOut:
                 pass
             text = "[{}] Pensiamo che utente {} abbia suonato alla porta!".format(device_name, target_id)
-
             if feedback is None:
                 text += "\nPersona ignota."
             elif feedback[0] > feedback[1]:
@@ -83,7 +81,6 @@ class Bot:
 
     def _handle_callback_feedback(self, bot, update):
         data = str(update.callback_query.data)
-        print(data)
         if not data.startswith("feedback") and not data.startswith("result_feedback"):
             pass
         target = data.split(",")[1]
@@ -99,8 +96,8 @@ class Bot:
                 reply_markup=reply_markup
             )
         else:
-            feedback = data.split(",")[0]
-            target = data.split(",")[1]
+            feedback = data.split(",")[1]
+            target = data.split(",")[2]
             unwanted = 0
             if feedback == "Scammer":
                 unwanted = 1
