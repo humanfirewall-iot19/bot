@@ -124,7 +124,7 @@ class Bot:
             response = requests.get(img_file.file_path)
             raw_img = BytesIO(response.content)
             img = Image.open(raw_img)
-            intercom_id = list(filter(lambda x: x.type == "QRCODE", decode(img)))[0].data.strip()
+            intercom_id = str(list(filter(lambda x: x.type == "QRCODE", decode(img)))[0].data).split("'")[1]
         else:
             intercom_id = str(update.message.text).strip()
 
