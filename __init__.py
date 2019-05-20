@@ -48,15 +48,15 @@ class Bot:
         feedback = db.get_feedback_by_target(target_id)
         for chat_id in chat_ids:
             device_name = db.get_device_name_by_chatID_and_device(chat_id, board_id)
-            button_list = [
-                InlineKeyboardButton("Lascia un feedback", callback_data="feedback,{}".format(target_id)),
-            ]
-            reply_markup = InlineKeyboardMarkup(build_menu(button_list, n_cols=1))
             try:
                 self.updater.bot.send_photo(chat_id=chat_id, photo=photo, timeout=120)
             except telegram.error.TimedOut:
                 pass
             if has_face:
+                button_list = [
+                    InlineKeyboardButton("Lascia un feedback", callback_data="feedback,{}".format(target_id)),
+                ]
+                reply_markup = InlineKeyboardMarkup(build_menu(button_list, n_cols=1))
                 text = "[{}] Pensiamo che utente {} abbia suonato alla porta!".format(device_name, target_id)
                 if feedback is None:
                     text += "\nPersona ignota."
@@ -66,11 +66,12 @@ class Bot:
                     text += "\nNon è classificato come scammer."
                 else:
                     text += "\nNon siamo certi sulla valutazione della persona."
+                    self.updater.bot.send_message(chat_id=chat_id,
+                                                  text=text,
+                                                  reply_markup=reply_markup)
             else:
                 text = "Qualcuno ha suonato alla porta ma purtroppo non so dirti chi e' stato"
-            self.updater.bot.send_message(chat_id=chat_id,
-                                          text=text,
-                                          reply_markup=reply_markup)
+                self.updater.bot.send_message(chat_id=chat_id, text=text)
         db.close()
 
     def start(self):
