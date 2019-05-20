@@ -2,7 +2,7 @@ import sqlite3
 
 
 class DBHelper:
-    def __init__(self, dbname="todo.sqlite", ):
+    def __init__(self, dbname="tg_db.sqlite", ):
         self.dbname = dbname
         self.conn = sqlite3.connect(dbname)
 
