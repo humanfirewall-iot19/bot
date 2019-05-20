@@ -66,9 +66,9 @@ class Bot:
                     text += "\nNon è classificato come scammer."
                 else:
                     text += "\nNon siamo certi sulla valutazione della persona."
-                    self.updater.bot.send_message(chat_id=chat_id,
-                                                  text=text,
-                                                  reply_markup=reply_markup)
+                self.updater.bot.send_message(chat_id=chat_id,
+                                              text=text,
+                                              reply_markup=reply_markup)
             else:
                 text = "Qualcuno ha suonato alla porta ma purtroppo non so dirti chi e' stato"
                 self.updater.bot.send_message(chat_id=chat_id, text=text)
