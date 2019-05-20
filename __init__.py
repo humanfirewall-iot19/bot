@@ -49,7 +49,9 @@ class Bot:
         for chat_id in chat_ids:
             device_name = db.get_device_name_by_chatID_and_device(chat_id, board_id)
             if photo is None:
-                photo = get_url()
+                self.updater.bot.send_message(chat_id=chat_id,
+                                              text="Qualcuno ha suonato alla porta ma purtroppo non so dirti chi e' stato")
+                continue
             button_list = [
                 InlineKeyboardButton("Lascia un feedback", callback_data="feedback,{}".format(target_id)),
             ]
@@ -136,7 +138,7 @@ class Bot:
         return ConversationHandler.END
 
     def _test_notification(self, bot, update):
-        self.send_notification("1", "1", None)
+        self.send_notification("1", "1", get_url())
 
     def delete(self, bot, update):
         chat_id = str(update.message.chat_id)
