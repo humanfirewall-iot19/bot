@@ -67,8 +67,8 @@ class Bot:
                 else:
                     text += "\nWe are not sure about the user evaluation."
                 self.updater.bot.send_message(chat_id=chat_id,
-                                                  text=text,
-                                                  reply_markup=reply_markup)
+                                              text=text,
+                                              reply_markup=reply_markup)
             else:
                 text = "[{}] Someone rang the doorbell but we don't know who did it.".format(device_name)
                 self.updater.bot.send_message(chat_id=chat_id, text=text)
@@ -131,7 +131,8 @@ class Bot:
             intercom_id = str(update.message.text).strip()
 
         bot.send_message(chat_id=chat_id, text="You correctly configured the intercom with id {}.\nYou will now be "
-                                               "able to receive the notifications from that intercom!".format(intercom_id))
+                                               "able to receive the notifications from that intercom!".format(
+            intercom_id))
         db = DBHelper()
         db.connect()
         db.add_user(str(intercom_id), str(device_name), str(chat_id))
