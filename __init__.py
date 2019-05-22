@@ -54,23 +54,23 @@ class Bot:
                 pass
             if has_face:
                 button_list = [
-                    InlineKeyboardButton("Lascia un feedback", callback_data="feedback,{}".format(target_id)),
+                    InlineKeyboardButton("Leave a feedback", callback_data="feedback,{}".format(target_id)),
                 ]
                 reply_markup = InlineKeyboardMarkup(build_menu(button_list, n_cols=1))
-                text = "[{}] Pensiamo che utente {} abbia suonato alla porta!".format(device_name, target_id)
+                text = "[{}] We think that the subject {} has rang the doorbell!".format(device_name, target_id)
                 if feedback is None:
-                    text += "\nPersona ignota."
+                    text += "\nUnknown identity."
                 elif feedback[0] > feedback[1]:
-                    text += "\nE' uno scammer conosciuto."
+                    text += "\nIt's an unwanted guest."
                 elif feedback[1] > feedback[0]:
-                    text += "\nNon è classificato come scammer."
+                    text += "\nIt isn't classified as an unwanted guest."
                 else:
-                    text += "\nNon siamo certi sulla valutazione della persona."
-                    self.updater.bot.send_message(chat_id=chat_id,
+                    text += "\nWe are not sure about the user evaluation."
+                self.updater.bot.send_message(chat_id=chat_id,
                                                   text=text,
                                                   reply_markup=reply_markup)
             else:
-                text = "Qualcuno ha suonato alla porta ma purtroppo non so dirti chi e' stato"
+                text = "[{}] Someone rang the doorbell but we don't know who did it.".format(device_name)
                 self.updater.bot.send_message(chat_id=chat_id, text=text)
         db.close()
 
@@ -93,7 +93,7 @@ class Bot:
             ]
             reply_markup = InlineKeyboardMarkup(build_menu(button_list, n_cols=1))
             update.callback_query.edit_message_text(
-                text="Che feedback ci vorresti lasciare?".format(
+                text="Which feedback you would like to give?".format(
                     data.split(",")[1]),
                 reply_markup=reply_markup
             )
@@ -108,7 +108,7 @@ class Bot:
             db.add_feedback(str(update.callback_query.message.chat.id), target, unwanted)
             db.close()
             update.callback_query.edit_message_text(
-                text="Grazie per il feedback!",
+                text="Thank you for the feedback!",
             )
 
     def received_deviceid(self, bot, update, user_data):
@@ -118,7 +118,7 @@ class Bot:
             bot.send_message(chat_id=chat_id, text="An unexpected error happened!\nTry again later")
             pass
         if update.message.text is None and (update.message.photo is None or len(update.message.photo) == 0):
-            bot.send_message(chat_id=chat_id, text="Devi scrivere l'id o mandare una foto con un QRCODE!")
+            bot.send_message(chat_id=chat_id, text="You have to write a valid id or send a QRCODE as a photo!")
             return
         if update.message.photo is not None and len(update.message.photo) > 0:
             photo_id = update.message.photo[-1].file_id
@@ -130,7 +130,8 @@ class Bot:
         else:
             intercom_id = str(update.message.text).strip()
 
-        bot.send_message(chat_id=chat_id, text="Ho correttamente configura l'id {}".format(intercom_id))
+        bot.send_message(chat_id=chat_id, text="You correctly configured the intercom with id {}.\nYou will now be "
+                                               "able to receive the notifications from that intercom!".format(intercom_id))
         db = DBHelper()
         db.connect()
         db.add_user(str(intercom_id), str(device_name), str(chat_id))
@@ -138,7 +139,7 @@ class Bot:
         return ConversationHandler.END
 
     def _test_notification(self, bot, update):
-        self.send_notification("1", "1", get_url())
+        self.send_notification("1", "1", get_url(), has_face=True)
 
     def delete(self, bot, update):
         chat_id = str(update.message.chat_id)
@@ -163,22 +164,20 @@ class Bot:
         db.connect()
         db.delete_user_by_id_and_device_name(device_name, str(update.callback_query.message.chat.id))
         update.callback_query.edit_message_text(
-            text="Device eliminato correttamente")
+            text="Device successfully removed")
         return ConversationHandler.END
 
 
 def _help(bot, update):
     chat_id = update.message.chat_id
     bot.send_message(chat_id=chat_id,
-                     text="Benvenuto nel bot del progetto Human Firewall \n che ti aiuterá ad identificare le persone "
-                          "alla porta")
+                     text="Welcome to the bot of the Human Firewall project. \nIt will help you to identify unwanted guest at your doorstep ")
 
 
 def _configure_start(bot, update):
     chat_id = update.message.chat_id
     bot.send_message(chat_id=chat_id,
-                     text="Inserisci il nome del citofono per iniziare a ricevere le notifiche di chi ti suona alla "
-                          "porta")
+                     text="Insert the name of the intercom that you would like to configure.")
     return DEVICE_NAME_GET
 
 
