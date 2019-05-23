@@ -52,6 +52,8 @@ class Bot:
                 self.updater.bot.send_photo(chat_id=chat_id, photo=photo, timeout=120)
             except telegram.error.TimedOut:
                 pass
+            if hasattr(photo, "seek"):
+                photo.seek(0)
             if has_face:
                 button_list = [
                     InlineKeyboardButton("Lascia un feedback", callback_data="feedback,{}".format(target_id)),
