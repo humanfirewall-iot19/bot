@@ -18,8 +18,9 @@ HANDLER_DELETE = 3
 class Bot:
     updater = None
 
-    def __init__(self, token):
+    def __init__(self, token, db_path=None):
         self.updater = Updater(token)
+        self.db_path = db_path
         dp = self.updater.dispatcher
         dp.add_handler(ConversationHandler(
             entry_points=[CommandHandler('delete', self.delete)],
@@ -31,7 +32,7 @@ class Bot:
         dp.add_handler(ConversationHandler(
             entry_points=[CommandHandler('configure', _configure_start)],
             states={
-                DEVICE_NAME_GET: [MessageHandler(Filters.text, request_name, pass_user_data=True)],
+                DEVICE_NAME_GET: [MessageHandler(Filters.text, self.request_name, pass_user_data=True)],
                 DEVICE_ID_GET: [
                     MessageHandler((Filters.text | Filters.photo), self.received_deviceid, pass_user_data=True)]
             },
@@ -42,7 +43,7 @@ class Bot:
         self.updater.bot.send_message(text=message, chat_id=chat_id)
 
     def send_notification(self, board_id, target_id, photo, has_face=True):
-        db = DBHelper()
+        db = DBHelper(abs_path=self.db_path)
         db.connect()
         chat_ids = db.get_chatID_by_device(str(board_id))
         feedback = db.get_feedback_by_target(target_id)
@@ -103,7 +104,7 @@ class Bot:
             unwanted = 0
             if feedback == "Scammer":
                 unwanted = 1
-            db = DBHelper()
+            db = DBHelper(abs_path=self.db_path)
             db.connect()
             db.add_feedback(str(update.callback_query.message.chat.id), target, unwanted)
             db.close()
@@ -133,7 +134,7 @@ class Bot:
         bot.send_message(chat_id=chat_id, text="You correctly configured the intercom with id {}.\nYou will now be "
                                                "able to receive the notifications from that intercom!".format(
             intercom_id))
-        db = DBHelper()
+        db = DBHelper(abs_path=self.db_path)
         db.connect()
         db.add_user(str(intercom_id), str(device_name), str(chat_id))
         db.close()
@@ -144,7 +145,7 @@ class Bot:
 
     def delete(self, bot, update):
         chat_id = str(update.message.chat_id)
-        db = DBHelper()
+        db = DBHelper(abs_path=self.db_path)
         db.connect()
         device_names = db.get_device_names_by_chatID(chat_id)
         buttons_list = []
@@ -161,12 +162,27 @@ class Bot:
 
     def _handle_callback_delete(self, bot, update):
         device_name = str(update.callback_query.data)
-        db = DBHelper()
+        db = DBHelper(abs_path=self.db_path)
         db.connect()
         db.delete_user_by_id_and_device_name(device_name, str(update.callback_query.message.chat.id))
         update.callback_query.edit_message_text(
             text="Device successfully removed")
         return ConversationHandler.END
+
+    def request_name(self, bot, update, user_data):
+        text = update.message.text
+        user_data['device_name'] = text
+        db = DBHelper(abs_path=self.db_path)
+        db.connect()
+
+        names = db.get_device_names_by_chatID(str(update.message.chat_id))
+        if text in names:
+            update.message.reply_text(
+                'Device name must be unique!\nTry again'.format(text))
+            return DEVICE_NAME_GET
+        update.message.reply_text(
+            'Ok what is the id for {}?'.format(text))
+        return DEVICE_ID_GET
 
 
 def _help(bot, update):
@@ -180,22 +196,6 @@ def _configure_start(bot, update):
     bot.send_message(chat_id=chat_id,
                      text="Insert the name of the intercom that you would like to configure.")
     return DEVICE_NAME_GET
-
-
-def request_name(bot, update, user_data):
-    text = update.message.text
-    user_data['device_name'] = text
-    db = DBHelper()
-    db.connect()
-
-    names = db.get_device_names_by_chatID(str(update.message.chat_id))
-    if text in names:
-        update.message.reply_text(
-            'Device name must be unique!\nTry again'.format(text))
-        return DEVICE_NAME_GET
-    update.message.reply_text(
-        'Ok what is the id for {}?'.format(text))
-    return DEVICE_ID_GET
 
 
 def _cancel(bot, update):

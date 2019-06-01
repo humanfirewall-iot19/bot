@@ -1,10 +1,14 @@
+import os
 import sqlite3
 
 
 class DBHelper:
-    def __init__(self, dbname="tg_db.sqlite", ):
+    def __init__(self, dbname="tg_db.sqlite", abs_path=None):
         self.dbname = dbname
-        self.conn = sqlite3.connect(dbname)
+        if abs_path is None:
+            self.conn = sqlite3.connect(dbname)
+        else:
+            self.conn = sqlite3.connect(os.path.join(abs_path, dbname))
 
     def connect(self):
         self._setup_feedback()
