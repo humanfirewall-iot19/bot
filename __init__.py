@@ -1,24 +1,29 @@
-from io import BytesIO
+from threading import Lock
 
 import requests
 import telegram
-import time
 from PIL import Image
 from pyzbar.pyzbar import decode
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, ConversationHandler, MessageHandler, Filters
 
-from .bot_helper import get_url, build_menu
 from .board_db_helper import BoardDBHelper
+from .bot_helper import get_url, build_menu
 from .queue_publisher import *
 
 DEVICE_NAME_GET = 2
 DEVICE_ID_GET = 1
 HANDLER_DELETE = 3
 
+
 class Bot:
-    updater = None
+
     def __init__(self, token, db_path=None):
+        self.lock = Lock()
+        self._load(token, db_path)
+
+    def _load(self, token, db_path):
+        self.token = token
         self.updater = Updater(token)
         self.db_path = db_path
         self.mqtt = QueuePublisher()
@@ -40,42 +45,55 @@ class Bot:
             fallbacks=[CommandHandler('cancel', _cancel)]))
         dp.add_handler(CallbackQueryHandler(self._handle_callback_feedback))
 
+    def reload(self):
+        self.lock.acquire()
+        try:
+            self.updater.stop()
+            self.mqtt.stop()
+            self._load(self.token, self.db_path)
+        finally:
+            self.lock.release()
+
     def send_message(self, chat_id, message):
-        self.updater.bot.send_message(text=message, chat_id=chat_id,)
+        self.updater.bot.send_message(text=message, chat_id=chat_id, )
 
     def send_notification(self, board_id, encoding, feedback, photo, has_face=True):
-        db = BoardDBHelper(abs_path=self.db_path)
-        db.connect()
-        chat_ids = db.get_chatID_by_device(str(board_id))
-        for chat_id in chat_ids:
-            device_name = db.get_device_name_by_chatID_and_device(chat_id, board_id)
-            try:
-                self.updater.bot.send_photo(chat_id=chat_id, photo=photo, timeout=120)
-            except telegram.error.TimedOut:
-                pass
-            if hasattr(photo, "seek"):
-                photo.seek(0)
-            if has_face:
-                button_list = [
-                    InlineKeyboardButton("Leave a feedback", callback_data="feedback,{}".format(encoding)),
-                ]
-                reply_markup = InlineKeyboardMarkup(build_menu(button_list, n_cols=1))
-                text = "[{}] Someone has rang the doorbell!".format(device_name)
-                if feedback is None:
-                     text += "\nNo feedback is avaiable."
-                if feedback[0] > feedback[1]:
-                    text += "\nIt's an unwanted guest."
-                elif feedback[1] > feedback[0]:
-                    text += "\nIt isn't classified as an unwanted guest."
+        self.lock.acquire()
+        try:
+            db = BoardDBHelper(abs_path=self.db_path)
+            db.connect()
+            chat_ids = db.get_chatID_by_device(str(board_id))
+            for chat_id in chat_ids:
+                device_name = db.get_device_name_by_chatID_and_device(chat_id, board_id)
+                try:
+                    self.updater.bot.send_photo(chat_id=chat_id, photo=photo, timeout=120)
+                except telegram.error.TimedOut:
+                    pass
+                if hasattr(photo, "seek"):
+                    photo.seek(0)
+                if has_face:
+                    button_list = [
+                        InlineKeyboardButton("Leave a feedback", callback_data="feedback,{}".format(encoding)),
+                    ]
+                    reply_markup = InlineKeyboardMarkup(build_menu(button_list, n_cols=1))
+                    text = "[{}] Someone has rang the doorbell!".format(device_name)
+                    if feedback is None:
+                        text += "\nNo feedback is avaiable."
+                    if feedback[0] > feedback[1]:
+                        text += "\nIt's an unwanted guest."
+                    elif feedback[1] > feedback[0]:
+                        text += "\nIt isn't classified as an unwanted guest."
+                    else:
+                        text += "\nWe are not sure about the user evaluation."
+                    self.updater.bot.send_message(chat_id=chat_id,
+                                                  text=text,
+                                                  reply_markup=reply_markup)
                 else:
-                    text += "\nWe are not sure about the user evaluation."
-                self.updater.bot.send_message(chat_id=chat_id,
-                                              text=text,
-                                              reply_markup=reply_markup)
-            else:
-                text = "[{}] Someone rang the doorbell but we don't know who did it.".format(device_name)
-                self.updater.bot.send_message(chat_id=chat_id, text=text)
-        db.close()
+                    text = "[{}] Someone rang the doorbell but we don't know who did it.".format(device_name)
+                    self.updater.bot.send_message(chat_id=chat_id, text=text)
+            db.close()
+        finally:
+            self.lock.release()
 
     def start(self):
         self.updater.start_polling()
@@ -106,7 +124,7 @@ class Bot:
             unwanted = 0
             if feedback == "Scammer":
                 unwanted = 1
-            self.mqtt.publishResults(encoding,unwanted,str(update.callback_query.message.chat.id),time.time())
+            self.mqtt.publishResults(encoding, unwanted, str(update.callback_query.message.chat.id), time.time())
             update.callback_query.edit_message_text(
                 text="Thank you for the feedback!",
             )
@@ -140,7 +158,7 @@ class Bot:
         return ConversationHandler.END
 
     def _test_notification(self, bot, update):
-        self.send_notification("1", "333",  [1,0], get_url())
+        self.send_notification("1", "333", [1, 0], get_url())
 
     def delete(self, bot, update):
         chat_id = str(update.message.chat_id)
@@ -201,4 +219,3 @@ def _cancel(bot, update):
     bot.send_message(chat_id=update.message.chat_id, text="Operazione annullata.\nRicordati che devi avere almeno un "
                                                           "dispositivo configurato per utilizzare questo bot al meglio!")
     return ConversationHandler.END
-
