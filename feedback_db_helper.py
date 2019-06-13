@@ -3,7 +3,7 @@ import sqlite3
 
 
 class FeedbackDBHelper:
-    def __init__(self, dbname="feedback.sqlite", abs_path=None):
+    def __init__(self, dbname="feedback_db.sqlite", abs_path=None):
         self.dbname = dbname
         if abs_path is None:
             self.conn = sqlite3.connect(dbname)
@@ -19,15 +19,15 @@ class FeedbackDBHelper:
 
 
     def _setup_feedback(self):
-        stmt = "CREATE TABLE IF NOT EXISTS userFeedback (id text, target text, unwanted bit)"
+        stmt = "CREATE TABLE IF NOT EXISTS userFeedback (id text, target text, unwanted bit, time int)"
         self.conn.execute(stmt)
         self.conn.commit()
 
     
-    def add_feedback(self, chat_id, target, unwanted):
+    def add_feedback(self, chat_id, target, unwanted, time):
         self.delete_feedback(chat_id, target)
-        stmt = "INSERT INTO userFeedback (id, target, unwanted) VALUES (?,?,?)"
-        args = (chat_id, target, unwanted)
+        stmt = "INSERT INTO userFeedback (id, target, unwanted, time) VALUES (?,?,?,?)"
+        args = (chat_id, target, unwanted, time)
         self.conn.execute(stmt, args)
         self.conn.commit()
 
@@ -37,6 +37,37 @@ class FeedbackDBHelper:
         self.conn.execute(stmt, args)
         self.conn.commit()
 
+    def get_time_by_target_and_chat_id(self, chat_id, target):
+        stmt = "SELECT time FROM userFeedback where target = (?) AND id = (?) order by time DESC limit 1"
+        args = (target, chat_id)
+        cursor = self.conn.execute(stmt, args)
+        ret = cursor.fetchone()
+        if ret is None:
+            return None
+        return ret[0]
+
+    def get_max_time(self):
+        stmt = "SELECT time FROM userFeedback order by time DESC limit 1"
+        args = ()
+        cursor = self.conn.execute(stmt, args)
+        ret = cursor.fetchone()
+        if ret is None:
+            return None
+        return ret[0]
+
+    def get_diff(self, timestamp):
+        stmt = "SELECT * FROM userFeedback where time>(?)"
+        args = (timestamp,)
+        return [[x[0],x[1],x[2], x[3]] for x in self.conn.execute(stmt,args)]
+
+    def apply_diff(self, diff):
+        for elem in diff:
+            self.add_feedback(elem[0],elem[1],elem[2],elem[3])
+
+    def print(self):
+        stmt = "SELECT * FROM userFeedback " 
+        for x in self.conn.execute(stmt):
+            print(x[0],x[1],x[2],x[3]) 
 
     def get_feedback_by_target(self, target):
         stmt1 = "SELECT count(*) FROM userFeedback where target = (?) AND unwanted == 1 group by target"
@@ -54,3 +85,4 @@ class FeedbackDBHelper:
             return ret1[0], 0
         else:
             return ret1[0], ret2[0]
+
