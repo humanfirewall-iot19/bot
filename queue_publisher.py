@@ -2,11 +2,12 @@ from io import BytesIO
 
 import paho.mqtt.client as mqtt
 import json
+import time
 
 class QueuePublisher:
 
     def __init__(self):
-        broker="iot.eclipse.org"
+        broker="broker.hivemq.com"
         self.client= mqtt.Client() 
         print("connecting to broker ",broker)
         self.client.connect(broker)#connect
@@ -19,6 +20,7 @@ class QueuePublisher:
         data["time"] = time
         data_out=json.dumps(data) # encode object to JSON
         self.client.publish("masterResults",data_out)
+        print("sent ",data_out)
 
     def stop(self):
         client.disconnect() #disconnect
