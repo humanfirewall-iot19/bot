@@ -2,6 +2,7 @@ from io import BytesIO
 
 import requests
 import telegram
+import time
 from PIL import Image
 from pyzbar.pyzbar import decode
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
@@ -9,15 +10,14 @@ from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, Conversa
 
 from bot_helper import get_url, build_menu
 from board_db_helper import BoardDBHelper
+from queue_publisher import *
 
 DEVICE_NAME_GET = 2
 DEVICE_ID_GET = 1
 HANDLER_DELETE = 3
 
-
 class Bot:
     updater = None
-
     def __init__(self, token, db_path=None):
         self.updater = Updater(token)
         self.db_path = db_path
@@ -41,9 +41,9 @@ class Bot:
         dp.add_handler(CallbackQueryHandler(self._handle_callback_feedback))
 
     def send_message(self, chat_id, message):
-        self.updater.bot.send_message(text=message, chat_id=chat_id)
+        self.updater.bot.send_message(text=message, chat_id=chat_id,)
 
-    def send_notification(self, board_id, encoding, feedback, photo):
+    def send_notification(self, board_id, encoding, feedback, photo, has_face=True):
         db = BoardDBHelper(abs_path=self.db_path)
         db.connect()
         chat_ids = db.get_chatID_by_device(str(board_id))
@@ -55,12 +55,14 @@ class Bot:
                 pass
             if hasattr(photo, "seek"):
                 photo.seek(0)
-            if feedback is not None:
+            if has_face:
                 button_list = [
                     InlineKeyboardButton("Leave a feedback", callback_data="feedback,{}".format(encoding)),
                 ]
                 reply_markup = InlineKeyboardMarkup(build_menu(button_list, n_cols=1))
                 text = "[{}] Someone has rang the doorbell!".format(device_name)
+                if feedback is None:
+                     text += "\nNo feedback is avaiable."
                 if feedback[0] > feedback[1]:
                     text += "\nIt's an unwanted guest."
                 elif feedback[1] > feedback[0]:
@@ -100,11 +102,11 @@ class Bot:
             )
         else:
             feedback = data.split(",")[1]
-            target = data.split(",")[2]
+            encoding = data.split(",")[2]
             unwanted = 0
             if feedback == "Scammer":
                 unwanted = 1
-            # Add feedback
+            self.mqtt.publishResults(encoding,unwanted,str(update.callback_query.message.chat.id),time.time())
             update.callback_query.edit_message_text(
                 text="Thank you for the feedback!",
             )
@@ -199,3 +201,4 @@ def _cancel(bot, update):
     bot.send_message(chat_id=update.message.chat_id, text="Operazione annullata.\nRicordati che devi avere almeno un "
                                                           "dispositivo configurato per utilizzare questo bot al meglio!")
     return ConversationHandler.END
+
