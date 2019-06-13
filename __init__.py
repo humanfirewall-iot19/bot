@@ -51,6 +51,7 @@ class Bot:
             self.updater.stop()
             self.mqtt.stop()
             self._load(self.token, self.db_path)
+            self.start()
         finally:
             self.lock.release()
 
