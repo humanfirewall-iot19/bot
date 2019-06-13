@@ -3,7 +3,7 @@ import sqlite3
 
 
 class BoardDBHelper:
-    def __init__(self, dbname="tg_db.sqlite", abs_path=None):
+    def __init__(self, dbname="board_db.sqlite", abs_path=None):
         self.dbname = dbname
         if abs_path is None:
             self.conn = sqlite3.connect(dbname)

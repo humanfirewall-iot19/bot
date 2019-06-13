@@ -3,7 +3,7 @@ import sqlite3
 
 
 class FeedbackDBHelper:
-    def __init__(self, dbname="tg_db.sqlite", abs_path=None):
+    def __init__(self, dbname="feedback.sqlite", abs_path=None):
         self.dbname = dbname
         if abs_path is None:
             self.conn = sqlite3.connect(dbname)
@@ -24,10 +24,10 @@ class FeedbackDBHelper:
         self.conn.commit()
 
     
-    def add_feedback(self, id, target, unwanted):
-        self.delete_feedback(id, target)
+    def add_feedback(self, chat_id, target, unwanted):
+        self.delete_feedback(chat_id, target)
         stmt = "INSERT INTO userFeedback (id, target, unwanted) VALUES (?,?,?)"
-        args = (id, target, unwanted)
+        args = (chat_id, target, unwanted)
         self.conn.execute(stmt, args)
         self.conn.commit()
 
