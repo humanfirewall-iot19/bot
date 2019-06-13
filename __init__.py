@@ -7,8 +7,8 @@ from pyzbar.pyzbar import decode
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, ConversationHandler, MessageHandler, Filters
 
-from .bot_helper import get_url, build_menu
-from .db_helper import DBHelper
+from bot_helper import get_url, build_menu
+from board_db_helper import BoardDBHelper
 
 DEVICE_NAME_GET = 2
 DEVICE_ID_GET = 1
@@ -21,6 +21,7 @@ class Bot:
     def __init__(self, token, db_path=None):
         self.updater = Updater(token)
         self.db_path = db_path
+        self.mqtt = QueuePublisher()
         dp = self.updater.dispatcher
         dp.add_handler(ConversationHandler(
             entry_points=[CommandHandler('delete', self.delete)],
@@ -42,11 +43,10 @@ class Bot:
     def send_message(self, chat_id, message):
         self.updater.bot.send_message(text=message, chat_id=chat_id)
 
-    def send_notification(self, board_id, target_id, photo, has_face=True):
-        db = DBHelper(abs_path=self.db_path)
+    def send_notification(self, board_id, encoding, feedback, photo):
+        db = BoardDBHelper(abs_path=self.db_path)
         db.connect()
         chat_ids = db.get_chatID_by_device(str(board_id))
-        feedback = db.get_feedback_by_target(target_id)
         for chat_id in chat_ids:
             device_name = db.get_device_name_by_chatID_and_device(chat_id, board_id)
             try:
@@ -55,15 +55,13 @@ class Bot:
                 pass
             if hasattr(photo, "seek"):
                 photo.seek(0)
-            if has_face:
+            if feedback is not None:
                 button_list = [
-                    InlineKeyboardButton("Leave a feedback", callback_data="feedback,{}".format(target_id)),
+                    InlineKeyboardButton("Leave a feedback", callback_data="feedback,{}".format(encoding)),
                 ]
                 reply_markup = InlineKeyboardMarkup(build_menu(button_list, n_cols=1))
-                text = "[{}] We think that the subject {} has rang the doorbell!".format(device_name, target_id)
-                if feedback is None:
-                    text += "\nUnknown identity."
-                elif feedback[0] > feedback[1]:
+                text = "[{}] Someone has rang the doorbell!".format(device_name)
+                if feedback[0] > feedback[1]:
                     text += "\nIt's an unwanted guest."
                 elif feedback[1] > feedback[0]:
                     text += "\nIt isn't classified as an unwanted guest."
@@ -106,10 +104,7 @@ class Bot:
             unwanted = 0
             if feedback == "Scammer":
                 unwanted = 1
-            db = DBHelper(abs_path=self.db_path)
-            db.connect()
-            db.add_feedback(str(update.callback_query.message.chat.id), target, unwanted)
-            db.close()
+            # Add feedback
             update.callback_query.edit_message_text(
                 text="Thank you for the feedback!",
             )
@@ -136,18 +131,18 @@ class Bot:
         bot.send_message(chat_id=chat_id, text="You correctly configured the intercom with id {}.\nYou will now be "
                                                "able to receive the notifications from that intercom!".format(
             intercom_id))
-        db = DBHelper(abs_path=self.db_path)
+        db = BoardDBHelper(abs_path=self.db_path)
         db.connect()
         db.add_user(str(intercom_id), str(device_name), str(chat_id))
         db.close()
         return ConversationHandler.END
 
     def _test_notification(self, bot, update):
-        self.send_notification("1", "1", get_url(), has_face=True)
+        self.send_notification("1", "333",  [1,0], get_url())
 
     def delete(self, bot, update):
         chat_id = str(update.message.chat_id)
-        db = DBHelper(abs_path=self.db_path)
+        db = BoardDBHelper(abs_path=self.db_path)
         db.connect()
         device_names = db.get_device_names_by_chatID(chat_id)
         buttons_list = []
@@ -164,7 +159,7 @@ class Bot:
 
     def _handle_callback_delete(self, bot, update):
         device_name = str(update.callback_query.data)
-        db = DBHelper(abs_path=self.db_path)
+        db = BoardDBHelper(abs_path=self.db_path)
         db.connect()
         db.delete_user_by_id_and_device_name(device_name, str(update.callback_query.message.chat.id))
         update.callback_query.edit_message_text(
@@ -174,7 +169,7 @@ class Bot:
     def request_name(self, bot, update, user_data):
         text = update.message.text
         user_data['device_name'] = text
-        db = DBHelper(abs_path=self.db_path)
+        db = BoardDBHelper(abs_path=self.db_path)
         db.connect()
 
         names = db.get_device_names_by_chatID(str(update.message.chat_id))
