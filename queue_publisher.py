@@ -14,6 +14,7 @@ class QueuePublisher:
         port = parser.getint('mqtt_broker', 'port')
         username = parser.get('mqtt_broker', 'username')
         password = parser.get('mqtt_broker', 'password')
+        print("connecting to broker ",broker)
         self.client.username_pw_set(username, password)
         self.client.connect(url,port)
 
