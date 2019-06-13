@@ -7,8 +7,9 @@ from pyzbar.pyzbar import decode
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, ConversationHandler, MessageHandler, Filters
 
-from bot_helper import get_url, build_menu
-from board_db_helper import BoardDBHelper
+from .bot_helper import get_url, build_menu
+from .board_db_helper import BoardDBHelper
+from .queue_publisher import QueuePublisher
 
 DEVICE_NAME_GET = 2
 DEVICE_ID_GET = 1
