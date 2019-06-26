@@ -80,7 +80,7 @@ class Bot:
                     text = "[{}] Someone has rang the doorbell!".format(device_name)
                     if feedback is None:
                         text += "\nNo feedback is avaiable."
-                    if feedback[0] > feedback[1]:
+                    elif feedback[0] > feedback[1]:
                         text += "\nIt's an unwanted guest."
                     elif feedback[1] > feedback[0]:
                         text += "\nIt isn't classified as an unwanted guest."
