@@ -2,6 +2,7 @@ from threading import Lock
 
 import requests
 import telegram
+import json
 from PIL import Image
 from pyzbar.pyzbar import decode
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
@@ -74,7 +75,7 @@ class Bot:
                     photo.seek(0)
                 if has_face:
                     button_list = [
-                        InlineKeyboardButton("Leave a feedback", callback_data="feedback,{}".format(str(encoding)),
+                        InlineKeyboardButton("Leave a feedback", callback_data="feedback@{}".format(json.dumps(encoding))),
                     ]
                     reply_markup = InlineKeyboardMarkup(build_menu(button_list, n_cols=1))
                     text = "[{}] Someone has rang the doorbell!".format(device_name)
@@ -120,8 +121,8 @@ class Bot:
                 reply_markup=reply_markup
             )
         else:
-            feedback = data.split(",")[1]
-            encoding = data.split(",")[2]
+            feedback = data.split("@")[1]
+            encoding = json.loads(data.split("@")[2])
             unwanted = 0
             if feedback == "Scammer":
                 unwanted = 1
