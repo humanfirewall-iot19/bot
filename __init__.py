@@ -131,7 +131,7 @@ class Bot:
             unwanted = 0
             if feedback == "Scammer":
                 unwanted = 1
-            self.mqtt.publishResults(self.list_requests[list_index], unwanted, str(update.callback_query.message.chat.id), time.time())
+            self.mqtt.publishResults(self.list_requests[list_index][1], unwanted, str(update.callback_query.message.chat.id), time.time())
             update.callback_query.edit_message_text(
                 text="Thank you for the feedback!",
             )
