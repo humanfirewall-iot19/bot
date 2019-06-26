@@ -19,15 +19,16 @@ HANDLER_DELETE = 3
 
 class Bot:
 
-    def __init__(self, token, db_path=None):
+    def __init__(self, token, ip_broker, db_path=None):
         self.lock = Lock()
-        self._load(token, db_path)
+        self._load(token, db_path,ip_broker)
 
-    def _load(self, token, db_path):
+    def _load(self, token, db_path,ip_broker):
         self.token = token
+        self.ip_broker = ip_broker
         self.updater = Updater(token)
         self.db_path = db_path
-        self.mqtt = QueuePublisher()
+        self.mqtt = QueuePublisher(ip_broker)
         self.list_requests = [None]*100
         self.list_index = 0
         dp = self.updater.dispatcher
@@ -53,7 +54,7 @@ class Bot:
         try:
             self.updater.stop()
             self.mqtt.stop()
-            self._load(self.token, self.db_path)
+            self._load(self.token, self.db_path, self.ip_broker)
             self.start()
         finally:
             self.lock.release()
