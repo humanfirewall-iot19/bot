@@ -58,7 +58,7 @@ class Bot:
     def send_message(self, chat_id, message):
         self.updater.bot.send_message(text=message, chat_id=chat_id, )
 
-    def send_notification(self, board_id, encoding, feedback, photo, has_face=True):
+    def send_notification(self, board_id, encoding, feedback, photo, has_face):
         self.lock.acquire()
         try:
             db = BoardDBHelper(abs_path=self.db_path)
