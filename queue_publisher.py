@@ -8,7 +8,7 @@ class QueuePublisher:
 
     def __init__(self, ip):
         self.client = mqtt.Client() 
-        print("connecting to broker ",url)
+        print("connecting to broker ",ip)
         self.client.connect(ip,1883)
 
     def publishResults(self,encoding,isUnwanted,chat_id,time):
