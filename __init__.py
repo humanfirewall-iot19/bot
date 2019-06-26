@@ -14,7 +14,7 @@ from .queue_publisher import *
 DEVICE_NAME_GET = 2
 DEVICE_ID_GET = 1
 HANDLER_DELETE = 3
-LIST_LENGTH = 40
+LIST_LENGTH = 500
 
 
 class Bot:
@@ -101,7 +101,8 @@ class Bot:
                     feedback_message = self.updater.bot.send_message(chat_id=chat_id, text=text)
 
                 if feedback_message is not None:
-                    self.add_to_feedback_list((feedback_message, encoding, self.start_time))
+                    message = {'chat_id': feedback_message.chat_id, 'message_id': feedback_message.message_id, 'text': feedback_message.text}
+                    self.add_to_feedback_list((message, encoding, self.start_time))
             db.close()
         finally:
             self.lock.release()
@@ -111,8 +112,7 @@ class Bot:
         if old_elem is not None:
             try:
                 old_msg = old_elem[0]
-                text = old_msg.text
-                self.updater.bot.edit_message_text(chat_id=old_msg.chat_id, message_id=old_msg.message_id, text= text)
+                self.updater.bot.edit_message_text(chat_id=old_msg['chat_id'], message_id=old_msg['message_id'], text= old_msg['text'])
             except Exception as e:
                 print(e)
 
