@@ -159,7 +159,7 @@ class Bot:
         return ConversationHandler.END
 
     def _test_notification(self, bot, update):
-        self.send_notification("1", "333", [1, 0], get_url())
+        self.send_notification("1", "333", [1, 0], get_url(), True)
 
     def delete(self, bot, update):
         chat_id = str(update.message.chat_id)
