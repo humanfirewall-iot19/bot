@@ -7,8 +7,6 @@ import configparser
 class QueuePublisher:
 
     def __init__(self, ip):
-        parser = configparser.ConfigParser()
-        parser.read('config.ini')
         self.client = mqtt.Client() 
         print("connecting to broker ",url)
         self.client.connect(ip,1883)
