@@ -108,16 +108,16 @@ class Bot:
         data = str(update.callback_query.data)
         if not data.startswith("feedback") and not data.startswith("result_feedback"):
             pass
-        target = data.split(",")[1]
+        target = data.split("@")[1]
         if data.startswith("feedback"):
             button_list = [
-                InlineKeyboardButton("Scammer", callback_data="result_feedback,Scammer,{}".format(target)),
-                InlineKeyboardButton("Not-scammer", callback_data="result_feedback,Not-Scammer,{}".format(target))
+                InlineKeyboardButton("Scammer", callback_data="result_feedback@Scammer@{}".format(target)),
+                InlineKeyboardButton("Not-scammer", callback_data="result_feedback@Not-Scammer@{}".format(target))
             ]
             reply_markup = InlineKeyboardMarkup(build_menu(button_list, n_cols=1))
             update.callback_query.edit_message_text(
                 text="Which feedback you would like to give?".format(
-                    data.split(",")[1]),
+                    data.split("@")[1]),
                 reply_markup=reply_markup
             )
         else:
