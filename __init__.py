@@ -2,7 +2,6 @@ from threading import Lock
 
 import requests
 import telegram
-import json
 from PIL import Image
 from pyzbar.pyzbar import decode
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
@@ -15,21 +14,23 @@ from .queue_publisher import *
 DEVICE_NAME_GET = 2
 DEVICE_ID_GET = 1
 HANDLER_DELETE = 3
+LIST_LENGTH = 40
 
 
 class Bot:
 
     def __init__(self, token, ip_broker, db_path=None):
         self.lock = Lock()
-        self._load(token, db_path,ip_broker)
+        self._load(token, db_path, ip_broker)
 
-    def _load(self, token, db_path,ip_broker):
+    def _load(self, token, db_path, ip_broker):
+        self.start_time = int(time.time())
         self.token = token
         self.ip_broker = ip_broker
         self.updater = Updater(token)
         self.db_path = db_path
         self.mqtt = QueuePublisher(ip_broker)
-        self.list_requests = [None]*100
+        self.list_requests = [None] * LIST_LENGTH
         self.list_index = 0
         dp = self.updater.dispatcher
         dp.add_handler(ConversationHandler(
@@ -70,9 +71,7 @@ class Bot:
             chat_ids = db.get_chatID_by_device(str(board_id))
             for chat_id in chat_ids:
                 device_name = db.get_device_name_by_chatID_and_device(chat_id, board_id)
-                self.list_requests[self.list_index] = (self.list_index, encoding)
-                list_index_used = self.list_index
-                self.list_index+=1
+                feedback_message = None
                 try:
                     self.updater.bot.send_photo(chat_id=chat_id, photo=photo, timeout=120)
                 except telegram.error.TimedOut:
@@ -81,7 +80,8 @@ class Bot:
                     photo.seek(0)
                 if has_face:
                     button_list = [
-                        InlineKeyboardButton("Leave a feedback", callback_data="feedback@{}".format(list_index_used)),
+                        InlineKeyboardButton("Leave a feedback",
+                                             callback_data="feedback@{}@{}".format(self.list_index, self.start_time)),
                     ]
                     reply_markup = InlineKeyboardMarkup(build_menu(button_list, n_cols=1))
                     text = "[{}] Someone has rang the doorbell!".format(device_name)
@@ -93,19 +93,36 @@ class Bot:
                         text += "\nIt isn't classified as an unwanted guest."
                     else:
                         text += "\nWe are not sure about the user evaluation."
-                    self.updater.bot.send_message(chat_id=chat_id,
-                                                  text=text,
-                                                  reply_markup=reply_markup)
+                    feedback_message = self.updater.bot.send_message(chat_id=chat_id,
+                                                                     text=text,
+                                                                     reply_markup=reply_markup)
                 else:
                     text = "[{}] Someone rang the doorbell but we don't know who did it.".format(device_name)
-                    self.updater.bot.send_message(chat_id=chat_id, text=text)
+                    feedback_message = self.updater.bot.send_message(chat_id=chat_id, text=text)
+
+                if feedback_message is not None:
+                    self.add_to_feedback_list((feedback_message, encoding, self.start_time))
             db.close()
         finally:
             self.lock.release()
 
+    def add_to_feedback_list(self, element):
+        old_elem = self.list_requests[self.list_index]
+        if old_elem is not None:
+            try:
+                old_msg = old_elem[0]
+                text = old_msg.text
+                self.updater.bot.edit_message_text(chat_id=old_msg.chat_id, message_id=old_msg.message_id, text= text)
+            except Exception as e:
+                print(e)
+
+        self.list_requests[self.list_index] = element
+        self.list_index += 1
+        if self.list_index == LIST_LENGTH:
+            self.list_index = 0
+
     def start(self):
         self.updater.start_polling()
-        # self.updater.idle()
 
     def stop(self):
         self.updater.stop()
@@ -114,11 +131,14 @@ class Bot:
         data = str(update.callback_query.data)
         if not data.startswith("feedback") and not data.startswith("result_feedback"):
             pass
-        target = data.split("@")[1]
         if data.startswith("feedback"):
+            list_index = data.split("@")[1]
+            bot_start_time = data.split("@")[2]
             button_list = [
-                InlineKeyboardButton("Scammer", callback_data="result_feedback@Scammer@{}".format(target)),
-                InlineKeyboardButton("Not-scammer", callback_data="result_feedback@Not-Scammer@{}".format(target))
+                InlineKeyboardButton("Scammer",
+                                     callback_data="result_feedback@Scammer@{}@{}".format(list_index, bot_start_time)),
+                InlineKeyboardButton("Not-scammer",
+                                     callback_data="result_feedback@Not-Scammer@{}@".format(list_index, bot_start_time))
             ]
             reply_markup = InlineKeyboardMarkup(build_menu(button_list, n_cols=1))
             update.callback_query.edit_message_text(
@@ -128,11 +148,20 @@ class Bot:
             )
         else:
             feedback = data.split("@")[1]
-            list_index = json.loads(data.split("@")[2])
+            list_index = int(data.split("@")[2])
+            bot_start_time = int(data.split("@")[3])
             unwanted = 0
             if feedback == "Scammer":
                 unwanted = 1
-            self.mqtt.publishResults(self.list_requests[list_index][1], unwanted, str(update.callback_query.message.chat.id), time.time())
+            self.lock.acquire()
+            try:
+                if bot_start_time == self.start_time:
+                    list_elem = self.list_requests[list_index]
+                    if list_elem is not None and int(list_elem[2]) == self.start_time and list_elem[0].chat.id == update.callback_query.message.chat.id:
+                        self.mqtt.publishResults(self.list_requests[list_index][1], unwanted,
+                                                 str(update.callback_query.message.chat.id), time.time())
+            finally:
+                self.lock.release()
             update.callback_query.edit_message_text(
                 text="Thank you for the feedback!",
             )
