@@ -138,7 +138,7 @@ class Bot:
                 InlineKeyboardButton("Scammer",
                                      callback_data="result_feedback@Scammer@{}@{}".format(list_index, bot_start_time)),
                 InlineKeyboardButton("Not-scammer",
-                                     callback_data="result_feedback@Not-Scammer@{}@".format(list_index, bot_start_time))
+                                     callback_data="result_feedback@Not-Scammer@{}@{}".format(list_index, bot_start_time))
             ]
             reply_markup = InlineKeyboardMarkup(build_menu(button_list, n_cols=1))
             update.callback_query.edit_message_text(
