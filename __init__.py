@@ -74,7 +74,7 @@ class Bot:
                     photo.seek(0)
                 if has_face:
                     button_list = [
-                        InlineKeyboardButton("Leave a feedback", callback_data="feedback,{}".format(encoding)),
+                        InlineKeyboardButton("Leave a feedback", callback_data="feedback,{}".format(str(encoding)),
                     ]
                     reply_markup = InlineKeyboardMarkup(build_menu(button_list, n_cols=1))
                     text = "[{}] Someone has rang the doorbell!".format(device_name)
