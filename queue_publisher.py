@@ -10,6 +10,7 @@ class QueuePublisher:
         self.client = mqtt.Client() 
         print("connecting to broker ",ip)
         self.client.connect(ip,1883)
+        self.client.loop_start()
 
     def publishResults(self,encoding,isUnwanted,chat_id,time):
         data = {}
@@ -18,8 +19,8 @@ class QueuePublisher:
         data["chat_id"] = chat_id
         data["time"] = time
         data_out=json.dumps(data) # encode object to JSON
-        self.client.publish("masterResults",data_out)
-        print("sent ",data_out)
+        ret=self.client.publish("masterResults",data_out)
+        print("sent ",data_out,ret)
 
     def stop(self):
         client.disconnect() #disconnect
