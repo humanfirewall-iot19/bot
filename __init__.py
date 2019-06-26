@@ -28,6 +28,8 @@ class Bot:
         self.updater = Updater(token)
         self.db_path = db_path
         self.mqtt = QueuePublisher()
+        self.list_requests = [None]*100
+        self.list_index = 0
         dp = self.updater.dispatcher
         dp.add_handler(ConversationHandler(
             entry_points=[CommandHandler('delete', self.delete)],
@@ -67,6 +69,9 @@ class Bot:
             chat_ids = db.get_chatID_by_device(str(board_id))
             for chat_id in chat_ids:
                 device_name = db.get_device_name_by_chatID_and_device(chat_id, board_id)
+                self.list_requests[self.list_index] = (self.list_index, encoding)
+                list_index_used = self.list_index
+                self.list_index+=1
                 try:
                     self.updater.bot.send_photo(chat_id=chat_id, photo=photo, timeout=120)
                 except telegram.error.TimedOut:
@@ -75,7 +80,7 @@ class Bot:
                     photo.seek(0)
                 if has_face:
                     button_list = [
-                        InlineKeyboardButton("Leave a feedback", callback_data="feedback@{}".format(json.dumps(encoding))),
+                        InlineKeyboardButton("Leave a feedback", callback_data="feedback@{}".format(list_index_used)),
                     ]
                     reply_markup = InlineKeyboardMarkup(build_menu(button_list, n_cols=1))
                     text = "[{}] Someone has rang the doorbell!".format(device_name)
@@ -122,11 +127,11 @@ class Bot:
             )
         else:
             feedback = data.split("@")[1]
-            encoding = json.loads(data.split("@")[2])
+            list_index = json.loads(data.split("@")[2])
             unwanted = 0
             if feedback == "Scammer":
                 unwanted = 1
-            self.mqtt.publishResults(encoding, unwanted, str(update.callback_query.message.chat.id), time.time())
+            self.mqtt.publishResults(self.list_requests[list_index], unwanted, str(update.callback_query.message.chat.id), time.time())
             update.callback_query.edit_message_text(
                 text="Thank you for the feedback!",
             )
