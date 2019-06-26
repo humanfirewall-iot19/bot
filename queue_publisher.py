@@ -6,17 +6,12 @@ import time
 import configparser
 class QueuePublisher:
 
-    def __init__(self):
+    def __init__(self, ip):
         parser = configparser.ConfigParser()
         parser.read('config.ini')
         self.client = mqtt.Client() 
-        url = parser.get('mqtt_broker', 'url')
-        port = parser.getint('mqtt_broker', 'port')
-        username = parser.get('mqtt_broker', 'username')
-        password = parser.get('mqtt_broker', 'password')
         print("connecting to broker ",url)
-        self.client.username_pw_set(username, password)
-        self.client.connect(url,port)
+        self.client.connect(ip,1883)
 
     def publishResults(self,encoding,isUnwanted,chat_id,time):
         data = {}
