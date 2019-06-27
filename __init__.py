@@ -154,7 +154,7 @@ class Bot:
         else:
             feedback = data.split("@")[1]
             list_index = int(data.split("@")[2])
-            bot_start_time = int(data.split("@")[3])
+            bot_start_time = float(data.split("@")[3])
             unwanted = 0
             if feedback == "Scammer":
                 unwanted = 1
@@ -162,7 +162,7 @@ class Bot:
             try:
                 if bot_start_time == self.start_time:
                     list_elem = self.list_requests[list_index]
-                    if list_elem is not None and int(list_elem[2]) == self.start_time and list_elem[0].chat.id == update.callback_query.message.chat.id:
+                    if list_elem is not None and float(list_elem[2]) == self.start_time and list_elem[0].chat.id == update.callback_query.message.chat.id:
                         self.mqtt.publishResults(list_elem[1], unwanted,
                                                  str(update.callback_query.message.chat.id), time.time())
             finally:
