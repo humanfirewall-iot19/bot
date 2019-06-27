@@ -101,8 +101,7 @@ class Bot:
                     feedback_message = self.updater.bot.send_message(chat_id=chat_id, text=text)
 
                 if feedback_message is not None:
-                    message = {'chat_id': feedback_message.chat_id, 'message_id': feedback_message.message_id, 'text': feedback_message.text}
-                    self.add_to_feedback_list((message, encoding, self.start_time))
+                    self.add_to_feedback_list((feedback_message, encoding, self.start_time))
             db.close()
         finally:
             self.lock.release()
@@ -112,7 +111,7 @@ class Bot:
         if old_elem is not None:
             try:
                 old_msg = old_elem[0]
-                self.updater.bot.edit_message_text(chat_id=old_msg['chat_id'], message_id=old_msg['message_id'], text= old_msg['text'])
+                self.updater.bot.edit_message_text(chat_id=old_msg.chat.id, message_id=old_msg.message_id, text= old_msg.text)
             except Exception as e:
                 print(e)
 
