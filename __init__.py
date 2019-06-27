@@ -91,7 +91,7 @@ class Bot:
                     reply_markup = InlineKeyboardMarkup(build_menu(button_list, n_cols=1))
                     text = "[{}] Someone has rang the doorbell!".format(device_name)
                     if feedback is None:
-                        text += "\nNo feedback is avaiable."
+                        text += "\nNo feedback is available."
                     elif feedback[0] > feedback[1]:
                         text += "\nIt's an unwanted guest. \u26a0"
                     elif feedback[1] > feedback[0]:
