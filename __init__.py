@@ -2,6 +2,7 @@ from threading import Lock
 
 import requests
 import telegram
+import sys
 from PIL import Image
 from pyzbar.pyzbar import decode
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
@@ -14,7 +15,7 @@ from .queue_publisher import *
 DEVICE_NAME_GET = 2
 DEVICE_ID_GET = 1
 HANDLER_DELETE = 3
-LIST_LENGTH = 500
+LIST_LENGTH = 1500
 
 
 class Bot:
@@ -116,6 +117,7 @@ class Bot:
                 print(e)
 
         self.list_requests[self.list_index] = element
+        print(sys.getsizeof(element))
         self.list_index += 1
         if self.list_index == LIST_LENGTH:
             self.list_index = 0
