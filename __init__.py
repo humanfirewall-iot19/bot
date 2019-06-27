@@ -29,7 +29,7 @@ class Bot:
         self._load(token, db_path, ip_broker)
 
     def _load(self, token, db_path, ip_broker):
-        self.start_time = int(time.time())
+        self.start_time = time.time()
         self.token = token
         self.ip_broker = ip_broker
         self.updater = Updater(token)
