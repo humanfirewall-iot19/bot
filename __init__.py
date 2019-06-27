@@ -117,11 +117,11 @@ class Bot:
             try:
                 old_msg = old_elem[0]
                 self.updater.bot.edit_message_text(chat_id=old_msg.chat.id, message_id=old_msg.message_id, text= old_msg.text)
-            except Exception as e:
-                print(e)
+            except:
+                import traceback
+                traceback.print_exc()
 
         self.list_requests[self.list_index] = element
-        print(sys.getsizeof(element))
         self.list_index += 1
         if self.list_index == LIST_LENGTH:
             self.list_index = 0
