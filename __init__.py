@@ -3,6 +3,7 @@ from threading import Lock
 import requests
 import telegram
 import sys
+import logging
 from PIL import Image
 from pyzbar.pyzbar import decode
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
@@ -20,7 +21,10 @@ LIST_LENGTH = 1500
 
 class Bot:
 
-    def __init__(self, token, ip_broker, db_path=None):
+    def __init__(self, token, ip_broker, db_path=None, debug = False):
+        if debug: 
+            logger = logging.getLogger()
+            logger.setLevel(logging.DEBUG)
         self.lock = Lock()
         self._load(token, db_path, ip_broker)
 
@@ -89,9 +93,9 @@ class Bot:
                     if feedback is None:
                         text += "\nNo feedback is avaiable."
                     elif feedback[0] > feedback[1]:
-                        text += "\nIt's an unwanted guest."
+                        text += "\nIt's an unwanted guest. \u26a0"
                     elif feedback[1] > feedback[0]:
-                        text += "\nIt isn't classified as an unwanted guest."
+                        text += "\nIt is a trusted guest. \u2705"
                     else:
                         text += "\nWe are not sure about the user evaluation."
                     feedback_message = self.updater.bot.send_message(chat_id=chat_id,
