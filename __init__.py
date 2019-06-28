@@ -2,7 +2,6 @@ from threading import Lock
 
 import requests
 import telegram
-import sys
 import logging
 from PIL import Image
 from pyzbar.pyzbar import decode
@@ -76,7 +75,6 @@ class Bot:
             chat_ids = db.get_chatID_by_device(str(board_id))
             for chat_id in chat_ids:
                 device_name = db.get_device_name_by_chatID_and_device(chat_id, board_id)
-                feedback_message = None
                 try:
                     self.updater.bot.send_photo(chat_id=chat_id, photo=photo, timeout=120)
                 except telegram.error.TimedOut:
@@ -93,11 +91,13 @@ class Bot:
                     if feedback is None:
                         text += "\nNo feedback is available."
                     elif feedback[0] > feedback[1]:
-                        text += "\nIt's an unwanted guest."
-                        text = "\u26a0" + text
+                        text += "\nIt's an unwanted guest ({}/{} votes).".format(feedback[0], feedback[0]+feedback[1])
+                        board_name_pos = text.find("]")+1
+                        text = text[:board_name_pos] + " \u26a0" + text[board_name_pos:]
                     elif feedback[1] > feedback[0]:
-                        text += "\nIt is a trusted guest."
-                        text = "\u2705" + text
+                        text += "\nIt is a trusted guest ({}/{} votes).".format(feedback[1], feedback[0]+feedback[1])
+                        board_name_pos = text.find("]")+1
+                        text = text[:board_name_pos] + " \u2705" + text[board_name_pos:]
                     else:
                         text += "\nWe are not sure about the user evaluation."
                     feedback_message = self.updater.bot.send_message(chat_id=chat_id,
