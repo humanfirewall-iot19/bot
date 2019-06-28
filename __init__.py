@@ -93,9 +93,11 @@ class Bot:
                     if feedback is None:
                         text += "\nNo feedback is available."
                     elif feedback[0] > feedback[1]:
-                        text += "\nIt's an unwanted guest. \u26a0"
+                        text += "\nIt's an unwanted guest."
+                        text = "\u26a0" + text
                     elif feedback[1] > feedback[0]:
-                        text += "\nIt is a trusted guest. \u2705"
+                        text += "\nIt is a trusted guest."
+                        text = "\u2705" + text
                     else:
                         text += "\nWe are not sure about the user evaluation."
                     feedback_message = self.updater.bot.send_message(chat_id=chat_id,
