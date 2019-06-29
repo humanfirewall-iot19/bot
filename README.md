@@ -32,7 +32,7 @@ bot.stop()
 
 ```
 
-I highly suggest yout to check the [master system repo](https://github.com/humanfirewall-iot19/master) to see how the bot subsystem was used in conjuction with the other modules of our project.
+I highly suggest you to check the [master system repo](https://github.com/humanfirewall-iot19/master) to see how the bot subsystem was used in conjuction with the other modules of our project.
 
 ## Dependencies
 
