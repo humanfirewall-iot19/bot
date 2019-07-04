@@ -1,12 +1,3 @@
-import requests
-
-
-def get_url():
-    contents = requests.get('https://random.dog/woof.json').json()
-    url = contents['url']
-    return url
-
-
 def build_menu(buttons,
                n_cols,
                header_buttons=None,
