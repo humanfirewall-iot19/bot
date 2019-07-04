@@ -20,8 +20,8 @@ LIST_LENGTH = 1500
 
 class Bot:
 
-    def __init__(self, token, ip_broker, db_path=None, debug = False):
-        if debug: 
+    def __init__(self, token, ip_broker, db_path=None, debug=False):
+        if debug:
             logger = logging.getLogger()
             logger.setLevel(logging.DEBUG)
         self.lock = Lock()
@@ -42,7 +42,6 @@ class Bot:
             states={
                 HANDLER_DELETE: [CallbackQueryHandler(self._handle_callback_delete)],
             }, fallbacks=[CommandHandler('cancel', _cancel)]))
-        dp.add_handler(CommandHandler('test', self._test_notification))
         dp.add_handler(CommandHandler('help', help))
         dp.add_handler(ConversationHandler(
             entry_points=[CommandHandler('configure', _configure_start)],
@@ -63,9 +62,6 @@ class Bot:
             self.start()
         finally:
             self.lock.release()
-
-    def send_message(self, chat_id, message):
-        self.updater.bot.send_message(text=message, chat_id=chat_id, )
 
     def send_notification(self, board_id, encoding, feedback, photo, has_face):
         self.lock.acquire()
@@ -91,12 +87,12 @@ class Bot:
                     if feedback is None:
                         text += "\nNo feedback is available."
                     elif feedback[0] > feedback[1]:
-                        text += "\nIt's an unwanted guest ({}/{} votes).".format(feedback[0], feedback[0]+feedback[1])
-                        board_name_pos = text.find("]")+1
+                        text += "\nIt's an unwanted guest ({}/{} votes).".format(feedback[0], feedback[0] + feedback[1])
+                        board_name_pos = text.find("]") + 1
                         text = text[:board_name_pos] + " \u26a0" + text[board_name_pos:]
                     elif feedback[1] > feedback[0]:
-                        text += "\nIt is a trusted guest ({}/{} votes).".format(feedback[1], feedback[0]+feedback[1])
-                        board_name_pos = text.find("]")+1
+                        text += "\nIt is a trusted guest ({}/{} votes).".format(feedback[1], feedback[0] + feedback[1])
+                        board_name_pos = text.find("]") + 1
                         text = text[:board_name_pos] + " \u2705" + text[board_name_pos:]
                     else:
                         text += "\nWe are not sure about the user evaluation."
@@ -118,7 +114,8 @@ class Bot:
         if old_elem is not None:
             try:
                 old_msg = old_elem[0]
-                self.updater.bot.edit_message_text(chat_id=old_msg.chat.id, message_id=old_msg.message_id, text= old_msg.text)
+                self.updater.bot.edit_message_text(chat_id=old_msg.chat.id, message_id=old_msg.message_id,
+                                                   text=old_msg.text)
             except:
                 import traceback
                 traceback.print_exc()
@@ -145,7 +142,8 @@ class Bot:
                 InlineKeyboardButton("Scammer",
                                      callback_data="result_feedback@Scammer@{}@{}".format(list_index, bot_start_time)),
                 InlineKeyboardButton("Not-scammer",
-                                     callback_data="result_feedback@Not-Scammer@{}@{}".format(list_index, bot_start_time))
+                                     callback_data="result_feedback@Not-Scammer@{}@{}".format(list_index,
+                                                                                              bot_start_time))
             ]
             reply_markup = InlineKeyboardMarkup(build_menu(button_list, n_cols=1))
             update.callback_query.edit_message_text(
@@ -164,7 +162,8 @@ class Bot:
             try:
                 if bot_start_time == self.start_time:
                     list_elem = self.list_requests[list_index]
-                    if list_elem is not None and float(list_elem[2]) == self.start_time and list_elem[0].chat.id == update.callback_query.message.chat.id:
+                    if list_elem is not None and float(list_elem[2]) == self.start_time and list_elem[
+                        0].chat.id == update.callback_query.message.chat.id:
                         self.mqtt.publishResults(list_elem[1], unwanted,
                                                  str(update.callback_query.message.chat.id), time.time())
             finally:
@@ -200,9 +199,6 @@ class Bot:
         db.add_user(str(intercom_id), str(device_name), str(chat_id))
         db.close()
         return ConversationHandler.END
-
-    def _test_notification(self, bot, update):
-        self.send_notification("1", "333", [1, 0], get_url(), True)
 
     def delete(self, bot, update):
         chat_id = str(update.message.chat_id)
